@@ -1,4 +1,4 @@
-module ROM #(parameter OPSIZE = 12, parameter CELLS = 128, parameter ADDR_SIZE = 8, parameter MEM_H = "memh_test")
+module ROM #(parameter OPSIZE = 12, parameter CELLS = 128, parameter ADDR_SIZE = 8, parameter string MEM_H = "memh_test")
 (
 	input logic 				i_oe,
 	input logic[ADDR_SIZE-1:0] 	i_addr,
@@ -17,6 +17,7 @@ module ROM #(parameter OPSIZE = 12, parameter CELLS = 128, parameter ADDR_SIZE =
 	
 	initial begin
 		$readmemh(MEM_H, rom_data);
+		$display(MEM_H);
 	end
 
 endmodule
@@ -25,7 +26,7 @@ module rom_test();
 	localparam 	MEM_H 		= "memh_test";
 	localparam 	OPSIZE 		= 12;
 	localparam 	CELLS 		= 5;
-	parameter 	ADDR_SIZE 	= 8;
+	localparam 	ADDR_SIZE 	= 8;
 	logic 	rom_oe;
 	logic[ADDR_SIZE-1:0] 	rom_addr;
 	logic[OPSIZE-1:0]		rom_data;
@@ -42,8 +43,7 @@ module rom_test();
 	integer i = 0;
 	initial begin
 		$dumpfile("test.wcd");
-		$dumpvars(1, test);
-		clk = 0;
+		$dumpvars(1, rom_test);
 		rom_oe = 1;
 		for(i = 0; i < CELLS+5; i++) begin
 			#1

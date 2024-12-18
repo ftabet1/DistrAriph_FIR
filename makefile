@@ -1,6 +1,6 @@
-TOP_MOD = test
-VERILATOR = /home/user/verilator/verilator/bin/verilator
-SRC = src/test.sv
+TOP_MOD = test_DA_fir
+VERILATOR = $(VERILATOR_ROOT)/home/user/verilator/verilator/bin/verilator
+SRC = src/ROM.sv src/DA_fir.sv
 V_FLAGS = --binary --Wno-fatal --trace --timing --top-module $(TOP_MOD)
 
 all:
