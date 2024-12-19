@@ -12,31 +12,31 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 	input logic[OPSIZE-1:0] X
 );
 	
-	logic[BAAT*ORDER/PARTITION-1:0]		rom_addr[0:PARTITION-1];
-	logic[OPSIZE*BAAT-1:0]				rom_data[0:PARTITION-1];
+	logic[ORDER/PARTITION-1:0]			rom_addr[0:BAAT*PARTITION-1];
+	logic[OPSIZE-1:0]					rom_data[0:BAAT*PARTITION-1];
 	
+	logic[OPSIZE-1:0]					x_n[0:ORDER-1] = {3'b000, 3'b001, 3'b010, 3'b011, 3'b100, 3'b101};
+
 	genvar i, j;
 	generate 
 		//CREATE ROM BLOCKS
-		for(i = 0; i < PARTITION; i++) begin : PART_i
-			for(j = 0; j < BAAT; j++) begin : ROM_i
-				ROM #(	.OPSIZE(OPSIZE),
-						.CELLS(power(2, ORDER/PARTITION)),
-						.ADDR_SIZE(ORDER/PARTITION),
-						.MEM_H(MEM_T[i])) 
-				rom_i
-				(
-					.i_oe(1'b1),
-					.i_addr(rom_addr[i][(j + 1) * ORDER/PARTITION - 1 : j * ORDER/PARTITION]),
-					.o_data(rom_data[i][(j + 1) * OPSIZE - 1 : j * OPSIZE])
-				);
-			end
+		for(i = 0; i < PARTITION*BAAT; i++) begin : ROM_i
+			ROM #(	.OPSIZE(OPSIZE),
+					.CELLS(power(2, ORDER/PARTITION)),
+					.ADDR_SIZE(ORDER/PARTITION),
+					.MEM_H(MEM_T[i/(ORDER/PARTITION)])) 
+			rom_i
+			(
+				.i_oe(1'b1),
+				.i_addr(rom_addr[i]),
+				.o_data(rom_data[i])
+			);
 		end
 		
-		
+		for(i = 0; i < ORDER*ORDER/PARTITION; i++) begin
+			assign rom_addr[i/(ORDER/PARTITION)][i%(ORDER/PARTITION)] = x_n[(i%(ORDER/PARTITION)) + ((i / (ORDER/PARTITION*BAAT)) * (ORDER/PARTITION))][i/BAAT - ((i / (ORDER/PARTITION*BAAT)) * (ORDER/PARTITION))]; 
+		end
 	endgenerate
-	
-	
 	
 	always@(posedge clk) begin
 		
@@ -62,7 +62,7 @@ module test_DA_fir();
 	DA_fir #(OPSIZE, ORDER, BAAT, PARTITION, MEM_T) DA_fir_uut (clk, X);
 	
 	initial begin
-		$dumpfile("test.wcd");
+		$dumpfile("test_DA_fir.wcd");
 		$dumpvars(1, test_DA_fir);
 		#10
 		$finish;

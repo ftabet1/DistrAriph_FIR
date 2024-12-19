@@ -42,7 +42,7 @@ module rom_test();
 	
 	integer i = 0;
 	initial begin
-		$dumpfile("test.wcd");
+		$dumpfile("test_rom.wcd");
 		$dumpvars(1, rom_test);
 		rom_oe = 1;
 		for(i = 0; i < CELLS+5; i++) begin
