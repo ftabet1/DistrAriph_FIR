@@ -6,7 +6,7 @@ function automatic int power(int base, int exp);
 	return result;
 endfunction
 
-module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, parameter PARTITION = 2, parameter string MEM_T[0:1] = {"memh_test.hex", "memh_test1.hex"})
+module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, parameter PARTITION = 2, string MEM_T[0:1] = '{"memh_test.hex", "memh_test1.hex"})
 (
 	input logic rst,
 	input logic start,
@@ -58,11 +58,12 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 	endgenerate
 	
 	 //Create adders tree's
+	 
 	always_comb begin
-		yout = 0; 
-		for(integer i = 0; i < PARTITION; i++) begin
-			yout += y_fb[i]; 
-		end
+        yout = 0;
+        for(integer i = 0; i < PARTITION; i++) begin
+            yout += y_fb[i]; 
+        end
 
 		for(integer i = 0; i < PARTITION; i++) begin
 			y_add[i] = 0;
@@ -96,6 +97,11 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 					ready = 0;
 				end
 			end else if(state == STATE_CALC) begin
+			
+			    //////////
+			    
+			    //////////
+			    
 				//Put adder value to FB reg
 				for(integer i = 0; i < PARTITION; i++) begin
 					y_fb[i] = y_add[i];
@@ -112,7 +118,7 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 				if(cnt == (OPSIZE/BAAT)-1) begin
 					ready = 1;
 					state = STATE_IDLE;
-					yout = y_out;
+					y_out = yout;
 				end else if(cnt == (OPSIZE/BAAT)-2) begin
 					TS = 1;
 				end
@@ -139,7 +145,7 @@ module test_DA_fir();
 	localparam ORDER = 6;
 	localparam BAAT = 3;
 	localparam PARTITION = 2;
-	parameter string MEM_T[0:1] = {"memh_test.hex", "memh_test1.hex"};
+	parameter string MEM_T[0:1] = '{"C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test.hex", "C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test1.hex"};
 	
 	logic rst = 0;
 	logic start = 0;
