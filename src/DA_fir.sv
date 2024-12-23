@@ -6,7 +6,7 @@ function automatic int power(int base, int exp);
 	return result;
 endfunction
 
-module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, parameter PARTITION = 2, string MEM_T[0:1] = '{"memh_test.hex", "memh_test1.hex"})
+module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, parameter PARTITION = 2, string MEM_T[0:1] = '{"C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test.hex", "C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test1.hex"})
 (
 	input logic rst,
 	input logic start,
@@ -41,7 +41,7 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 				.OPSIZE(OPSIZE),
 				.CELLS(power(2, ORDER/PARTITION)),
 				.ADDR_SIZE(ORDER/PARTITION),
-				.MEM_H(MEM_T[i/(ORDER/PARTITION)])) 
+				.MEM_H(MEM_T[i/BAAT])) 
 			rom_i
 			(
 				.i_oe(1'b1),
@@ -50,10 +50,11 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 			);
 		end
 		
+		
 		//Create x_n to ROM blocks connections
-		for(i = 0; i < ORDER*ORDER/PARTITION; i++) begin
+		for(i = 0; i < (BAAT*PARTITION)*(ORDER/PARTITION); i++) begin
 			assign rom_addr[i/(ORDER/PARTITION)][i%(ORDER/PARTITION)] = 
-				x_n[(i%(ORDER/PARTITION)) + ((i / (ORDER/PARTITION*BAAT)) * (ORDER/PARTITION))][i/BAAT - ((i / (ORDER/PARTITION*BAAT)) * (ORDER/PARTITION))];
+				x_n[(i%(ORDER/PARTITION)) + ((i / (ORDER/PARTITION*BAAT)) * (ORDER/PARTITION))][i/(ORDER/PARTITION) - BAAT*(i/(BAAT*(ORDER/PARTITION)))];
 		end
 	endgenerate
 	
@@ -98,10 +99,6 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 				end
 			end else if(state == STATE_CALC) begin
 			
-			    //////////
-			    
-			    //////////
-			    
 				//Put adder value to FB reg
 				for(integer i = 0; i < PARTITION; i++) begin
 					y_fb[i] = y_add[i];
@@ -141,17 +138,17 @@ endmodule
 
 module test_DA_fir();
 
-	localparam OPSIZE = 12;
-	localparam ORDER = 6;
-	localparam BAAT = 3;
-	localparam PARTITION = 2;
-	parameter string MEM_T[0:1] = '{"C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test.hex", "C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test1.hex"};
+	localparam OPSIZE =	 	8;
+	localparam ORDER = 		6;
+	localparam BAAT = 		2;
+	localparam PARTITION = 	2;
+	parameter string MEM_T[0:1] = '{"memh_test.hex", "memh_test1.hex"};
 	
 	logic rst = 0;
 	logic start = 0;
 	logic ready;
 	logic clk = 0;
-	logic[OPSIZE-1:0] X = 12'h7ff;
+	logic[OPSIZE-1:0] X = 8'h21;
 	logic[OPSIZE:0] Y;
 
 	always #1 clk ^= 1;
@@ -165,7 +162,7 @@ module test_DA_fir();
 		start = 1;
 		#2
 		start = 0;
-		X = 0;
+		//X = 0;
 		for(i = 0; i < 10; i ++) begin
 			while(!ready) begin
 				#2
