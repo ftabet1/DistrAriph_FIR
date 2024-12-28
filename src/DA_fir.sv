@@ -6,28 +6,29 @@ function automatic int power(int base, int exp);
 	return result;
 endfunction
 
-module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, parameter PARTITION = 2, string MEM_T[0:1] = '{"C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test.hex", "C:/Users/User/Desktop/univ/PSDRA/DAfir_vivad/DAfir_vivad.srcs/memh_test1.hex"})
+module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, parameter PARTITION = 2, string MEM_T[0:1] = '{"memh_test.hex", "memh_test1.hex"})
 (
 	input logic rst,
 	input logic start,
 	input logic clk,
 	input logic[OPSIZE-1:0] xin,
 	output logic ready,
-	output logic[OPSIZE:0] yout
+	output logic[OPSIZE-1:0] yout
 );
 
-	localparam CNT_WIDTH = $clog2(OPSIZE/BAAT);
+	localparam CNT_WIDTH = $clog2(OPSIZE / BAAT);
 	localparam STATE_IDLE = 0;
 	localparam STATE_CALC = 1;
+	localparam SHIFT_COMPENSATION = BAAT * (OPSIZE / BAAT);
 
 	logic[ORDER/PARTITION-1:0]				rom_addr[0:BAAT*PARTITION-1];
 	logic signed[OPSIZE-1:0]				rom_data[0:BAAT*PARTITION-1];
 	logic[OPSIZE-1:0]						x_n[0:ORDER-1];
-
 	logic[OPSIZE:0]							y = '0;
-	logic signed[OPSIZE:0]				y_add[0:PARTITION-1];
-	logic signed[OPSIZE:0]				y_fb[0:PARTITION-1];
-	logic signed[OPSIZE:0]				y_out;
+
+	logic signed[OPSIZE-1+SHIFT_COMPENSATION:0]				y_add[0:PARTITION-1];
+	logic signed[OPSIZE-1+SHIFT_COMPENSATION:0]				y_fb[0:PARTITION-1];
+	logic signed[OPSIZE-1+SHIFT_COMPENSATION:0]				y_out;
 	logic TS = 0;
 
 	logic 					state = STATE_IDLE;
@@ -61,20 +62,20 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 	 //Create adders tree's
 	 
 	always_comb begin
-        yout = 0;
+        y_out = 0;
         for(integer i = 0; i < PARTITION; i++) begin
-            yout += y_fb[i]; 
+            y_out += y_fb[i]; 
         end
 
 		for(integer i = 0; i < PARTITION; i++) begin
 			y_add[i] = 0;
 			for(integer j = 0; j < BAAT-1; j++) begin
-				y_add[i] += (rom_data[j+i*BAAT] >>> (BAAT-1)-j);
+				y_add[i] += ((rom_data[j+i*BAAT] <<< SHIFT_COMPENSATION) >>> (BAAT-1)-j);
 			end
 			//TS signal
 			y_add[i] = TS ? 
-				(y_add[i] + (y_fb[i] >>> BAAT) - (rom_data[(BAAT-1) + BAAT*i])) : 
-				(y_add[i] + (y_fb[i] >>> BAAT) + (rom_data[(BAAT-1) + BAAT*i]));
+				(y_add[i] + (y_fb[i] >>> BAAT) - (rom_data[(BAAT-1) + BAAT*i] <<< SHIFT_COMPENSATION)) : 
+				(y_add[i] + (y_fb[i] >>> BAAT) + (rom_data[(BAAT-1) + BAAT*i] <<< SHIFT_COMPENSATION));
 		end
 	end
 
@@ -99,27 +100,33 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 				end
 			end else if(state == STATE_CALC) begin
 			
-				//Put adder value to FB reg
-				for(integer i = 0; i < PARTITION; i++) begin
-					y_fb[i] = y_add[i];
-				end
+				if(cnt != (OPSIZE/BAAT)) begin
+					//Put adder value to FB reg
+					for(integer i = 0; i < PARTITION; i++) begin
+						y_fb[i] = y_add[i];
+					end
 
-				//x_n shift
-				for(integer i = ORDER-1; i >= 1; i--) begin
-					x_n[i][(OPSIZE-1)-BAAT : 0] = x_n[i][OPSIZE-1:BAAT]; 
-					x_n[i][(OPSIZE-1):OPSIZE-BAAT] = x_n[i-1][BAAT-1:0];
-				end
-				x_n[0][(OPSIZE-1)-BAAT : 0] = x_n[0][OPSIZE-1:BAAT];
-				x_n[0][(OPSIZE-1):OPSIZE-BAAT] = 0;
+					//x_n shift
+					for(integer i = ORDER-1; i >= 1; i--) begin
+						x_n[i][(OPSIZE-1)-BAAT : 0] = x_n[i][OPSIZE-1:BAAT]; 
+						x_n[i][(OPSIZE-1):OPSIZE-BAAT] = x_n[i-1][BAAT-1:0];
+					end
+					x_n[0][(OPSIZE-1)-BAAT : 0] = x_n[0][OPSIZE-1:BAAT];
+					x_n[0][(OPSIZE-1):OPSIZE-BAAT] = 0;
 
-				if(cnt == (OPSIZE/BAAT)-1) begin
+					if(cnt == (OPSIZE/BAAT)-1) begin
+						TS = 1;
+					end
+				end else if(cnt == (OPSIZE/BAAT)) begin
+					TS = 0;
 					ready = 1;
 					state = STATE_IDLE;
-					y_out = yout;
-				end else if(cnt == (OPSIZE/BAAT)-2) begin
-					TS = 1;
-				end
+					yout = y_out[OPSIZE-1+SHIFT_COMPENSATION : SHIFT_COMPENSATION];
 
+					for(integer i = 0; i < PARTITION; i++) begin
+						y_fb[i] = 0;
+					end
+				end
 				cnt = cnt + 1;
 			end
 		end
@@ -138,9 +145,9 @@ endmodule
 
 module test_DA_fir();
 
-	localparam OPSIZE =	 	8;
+	localparam OPSIZE =	 	12;
 	localparam ORDER = 		6;
-	localparam BAAT = 		2;
+	localparam BAAT = 		3;
 	localparam PARTITION = 	2;
 	parameter string MEM_T[0:1] = '{"memh_test.hex", "memh_test1.hex"};
 	
@@ -148,7 +155,7 @@ module test_DA_fir();
 	logic start = 0;
 	logic ready;
 	logic clk = 0;
-	logic[OPSIZE-1:0] X = 8'h21;
+	logic[OPSIZE-1:0] X = 12'h7FF;
 	logic[OPSIZE:0] Y;
 
 	always #1 clk ^= 1;
