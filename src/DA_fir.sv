@@ -88,6 +88,7 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 			for(integer i = 0; i < ORDER; i++) 	begin
 				x_n[i] = 0;
 			end
+			yout = 0;
 		end else begin
 			if(state == STATE_IDLE) begin
 				cnt = 0;
@@ -145,9 +146,9 @@ endmodule
 
 module test_DA_fir();
 
-	localparam OPSIZE =	 	12;
+	localparam OPSIZE =	 	8;
 	localparam ORDER = 		6;
-	localparam BAAT = 		3;
+	localparam BAAT = 		2;
 	localparam PARTITION = 	2;
 	parameter string MEM_T[0:1] = '{"memh_test.hex", "memh_test1.hex"};
 	
@@ -155,7 +156,7 @@ module test_DA_fir();
 	logic start = 0;
 	logic ready;
 	logic clk = 0;
-	logic[OPSIZE-1:0] X = 12'h800;
+	logic[OPSIZE-1:0] X = 8'h80;
 	logic[OPSIZE:0] Y;
 
 	always #1 clk ^= 1;
@@ -169,7 +170,7 @@ module test_DA_fir();
 		start = 1;
 		#2
 		start = 0;
-		X = 0;
+		//X = 0;
 		for(i = 0; i < 10; i ++) begin
 			while(!ready) begin
 				#2
