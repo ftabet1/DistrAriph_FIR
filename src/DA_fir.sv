@@ -114,7 +114,7 @@ module DA_fir #(parameter OPSIZE = 12, parameter ORDER = 6, parameter BAAT = 3, 
 					x_n[0][(OPSIZE-1)-BAAT : 0] = x_n[0][OPSIZE-1:BAAT];
 					x_n[0][(OPSIZE-1):OPSIZE-BAAT] = 0;
 
-					if(cnt == (OPSIZE/BAAT)-1) begin
+					if(cnt == (OPSIZE/BAAT)-2) begin
 						TS = 1;
 					end
 				end else if(cnt == (OPSIZE/BAAT)) begin
@@ -155,7 +155,7 @@ module test_DA_fir();
 	logic start = 0;
 	logic ready;
 	logic clk = 0;
-	logic[OPSIZE-1:0] X = 12'h7FF;
+	logic[OPSIZE-1:0] X = 12'h800;
 	logic[OPSIZE:0] Y;
 
 	always #1 clk ^= 1;
@@ -169,7 +169,7 @@ module test_DA_fir();
 		start = 1;
 		#2
 		start = 0;
-		//X = 0;
+		X = 0;
 		for(i = 0; i < 10; i ++) begin
 			while(!ready) begin
 				#2
